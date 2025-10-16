@@ -67,16 +67,21 @@ def get_pcc_films_with_times():
         if not title_el:
             continue
         title = title_el.get_text(strip=True)
-        # Find all screening date/time pairs for this film
         screenings = []
         for perf_outer in film_outer.select('div.performance-list-items-outer'):
-            date_heading = perf_outer.select_one('div.heading')
-            date_text = date_heading.get_text(strip=True) if date_heading else None
-            for li in perf_outer.select('li'):
-                time_span = li.select_one('span.time')
-                time_text = time_span.get_text(strip=True) if time_span else None
-                if date_text and time_text:
-                    screenings.append(f"{date_text} {time_text}")
+            ul = perf_outer.select_one('ul.performance-list-items')
+            if not ul:
+                continue
+            current_date = None
+            for child in ul.children:
+                # child can be a Tag or NavigableString
+                if getattr(child, 'name', None) == 'div' and 'heading' in child.get('class', []):
+                    current_date = child.get_text(strip=True)
+                elif getattr(child, 'name', None) == 'li':
+                    time_span = child.select_one('span.time')
+                    time_text = time_span.get_text(strip=True) if time_span else None
+                    if current_date and time_text:
+                        screenings.append(f"{current_date} {time_text}")
         films[title] = screenings
     return films
 
@@ -96,7 +101,11 @@ def main():
     print("\nFilms showing at Prince Charles Cinema that are also in your Letterboxd watchlist:")
     for film in sorted(intersection_films):
         print("")
-        print(f"{"-- "+film+" --":^40}")
+        film_line = f"-- {film} --"
+        line = '-' * len(film_line)
+        print(f"{line:^40}")
+        print(f"{film_line:^40}")
+        print(f"{line:^40}")
         for screening in pcc_films_with_times[film]:
             print(f"  - {format_screening_datetime(screening)}")
 
