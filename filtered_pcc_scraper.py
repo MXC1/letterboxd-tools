@@ -60,7 +60,11 @@ def main():
     out_path = "results/filtered_pcc_whats_on.html"
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(filtered_html)
-    print(f"Filtered HTML saved to {out_path}. Open this file in your browser.")
+    print(f"Filtered HTML saved to {out_path}. Opening in your default browser...")
+    import os
+    import webbrowser
+    abs_path = os.path.abspath(out_path)
+    webbrowser.open(f'file://{abs_path}')
 
 if __name__ == "__main__":
     main()
