@@ -3,9 +3,9 @@ import math
 import os
 import re
 
-import requests
-from bs4 import BeautifulSoup
 from PIL import Image
+
+from letterboxd import get, get_rss_items
 
 # ── Configuration ────────────────────────────────────────────────────────────
 USERNAME = "mfhcor"
@@ -17,14 +17,6 @@ CANVAS_H = 1920
 COLS = 6          # posters per row
 GAP = 5           # pixels between posters (and around the edges)
 BG_COLOR = (12, 12, 12)  # near-black background
-
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    )
-}
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -38,14 +30,9 @@ def fetch_2026_posters(username: str, year: str) -> list[dict]:
     If you've watched more than 50 films since the start of the previous
     calendar year you may need to add manual entries.
     """
-    url = f"https://letterboxd.com/{username}/rss/"
-    response = requests.get(url, headers=HEADERS, timeout=15)
-    response.raise_for_status()
-
-    soup = BeautifulSoup(response.content, "xml")
     films = []
 
-    for rss_index, item in enumerate(soup.find_all("item")):
+    for rss_index, item in enumerate(get_rss_items(username)):
         watched_el = item.find("letterboxd:watchedDate")
         desc_el = item.find("description")
         title_el = item.find("letterboxd:filmTitle")
@@ -81,8 +68,7 @@ def download_posters(films: list[dict]) -> list[Image.Image]:
     for i, film in enumerate(films, 1):
         print(f"  [{i}/{total}] {film['title']} ({film['watched_date']})")
         try:
-            resp = requests.get(film["poster_url"], headers=HEADERS, timeout=15)
-            resp.raise_for_status()
+            resp = get(film["poster_url"])
             img = Image.open(io.BytesIO(resp.content)).convert("RGB")
             images.append(img)
         except Exception as e:

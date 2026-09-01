@@ -1,9 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 
+from letterboxd import fetch_all_poster_items
+
 # URL for Prince Charles Cinema "What's On"
 PCC_URL = "https://princecharlescinema.com/whats-on/"
-LETTERBOXD_URL = "https://letterboxd.com/mxc48/watchlist/"
+LETTERBOXD_USERNAME = "mfhcor"
 
 def strip_year(title):
     import re
@@ -34,25 +36,10 @@ def get_pcc_films():
     return titles
 
 def get_letterboxd_watchlist(max_pages=10):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    films = set()
-    for page_num in range(1, max_pages + 1):
-        url = f"{LETTERBOXD_URL}page/{page_num}"
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            break
-        soup = BeautifulSoup(response.text, "html.parser")
-        found = False
-        for div in soup.find_all("div", class_="react-component"):
-            film_name = div.get("data-item-name")
-            if film_name:
-                films.add(film_name)
-                found = True
-        if not found:
-            break  # Stop if no films found on this page
-    return films
+    items = fetch_all_poster_items(
+        f"/{LETTERBOXD_USERNAME}/watchlist/", max_pages=max_pages
+    )
+    return {item["name"] for item in items}
 
 def get_pcc_films_with_times():
     headers = {

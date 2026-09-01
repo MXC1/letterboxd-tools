@@ -1,34 +1,22 @@
+import re
+
 import requests
 from bs4 import BeautifulSoup
 
-PCC_URL = "https://princecharlescinema.com/whats-on/"
-LETTERBOXD_URL = "https://letterboxd.com/mxc48/watchlist/"
+from letterboxd import fetch_all_poster_items
 
-# Use your existing strip_year function
-import re
+PCC_URL = "https://princecharlescinema.com/whats-on/"
+LETTERBOXD_USERNAME = "mfhcor"
+
+
 def strip_year(title):
     return re.sub(r"\s*\(\d{4}\)$", "", title)
 
 def get_letterboxd_watchlist(max_pages=10):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    films = set()
-    for page_num in range(1, max_pages + 1):
-        url = f"{LETTERBOXD_URL}page/{page_num}"
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            break
-        soup = BeautifulSoup(response.text, "html.parser")
-        found = False
-        for div in soup.find_all("div", class_="react-component"):
-            film_name = div.get("data-item-name")
-            if film_name:
-                films.add(strip_year(film_name))
-                found = True
-        if not found:
-            break
-    return films
+    items = fetch_all_poster_items(
+        f"/{LETTERBOXD_USERNAME}/watchlist/", max_pages=max_pages
+    )
+    return {strip_year(item["name"]) for item in items}
 
 def fetch_and_filter_pcc_html(watchlist):
     headers = {
